@@ -112,7 +112,7 @@ v(bdy2) = 0;
 v(bdy4) = 1;
 
 %% time-stepping
-Tf = 1500;
+Tf = 100;
 dt = 1/6 * dx^2;
 numtimesteps = ceil(Tf/dt);
 % adjust for integer number of steps
@@ -158,7 +158,7 @@ for kt = 1:numtimesteps
   u = Eu*unew;
   u(bdy3) = 2 + u(bdy3);
   v = Ev*vnew;
-  v(bdy3) = 2 + v(bdy3);
+  v(bdy4) = 2 + v(bdy4);
 
   t = kt*dt;
 
@@ -170,6 +170,16 @@ for kt = 1:numtimesteps
     set(Hplot, 'CData', sphplot);
     title( ['u at time ' num2str(t) ', kt= ' num2str(kt)] );
     drawnow;
-    pause
   end
 end
+
+Egrid = interp3_matrix(x1d,y1d,z1d,xg,yg,zg,p);
+ugrid = Egrid\u;
+ugrid = reshape(ugrid,size(x3d));
+vgrid = Egrid\v;
+vgrid = reshape(vgrid,size(x3d));
+
+figure
+hold on
+contourslice(x1d,y1d,z1d,ugrid,xp,yp,zp,10)
+contourslice(x1d,y1d,z1d,vgrid,xp,yp,zp,10)
