@@ -10,6 +10,10 @@
 dx = 0.2/2^1;  % grid spacing
 R=1; %Radius of the circle
 
+cpf = @cpHemisphereBCs;
+paramf = @paramHemisphere;
+loadData = 1;
+
 pad = 5;
 x1d=(-R-pad*dx):dx:(R+pad*dx);
 y1d=(-R-pad*dx):dx:(R+pad*dx);
@@ -24,8 +28,6 @@ nz=length(z1d);
 %[cpx,cpy,cpz, dist, bdy] = cpHemisphere(x3d,y3d,z3d R);
 
 % Using "cpbar" [Macdonald, Brandman, Ruuth 2011]:
-cpf = @cpHemisphereBCs;
-paramf = @paramHemisphere;
 [cpx,cpy,cpz, dist, bdy, bdyBCs] = cpf(x3d,y3d,z3d, R);
 [cpxb,cpyb,cpzb,dist,tilde,tilde] = cpbar_3dBCs(x3d,y3d,z3d,cpf,R);
 
@@ -112,7 +114,7 @@ v(bdy2) = 0;
 v(bdy4) = 1;
 
 %% time-stepping
-Tf = 100;
+Tf = 10;
 dt = 1/6 * dx^2;
 numtimesteps = ceil(Tf/dt);
 % adjust for integer number of steps
@@ -173,6 +175,9 @@ for kt = 1:numtimesteps
   end
 end
 
+%% plot meshgrid
+Nu = 256;
+Nv = 256;
 Egrid = interp3_matrix(x1d,y1d,z1d,xg,yg,zg,p);
 ugrid = Egrid\u;
 ugrid = reshape(ugrid,size(x3d));
@@ -181,5 +186,39 @@ vgrid = reshape(vgrid,size(x3d));
 
 figure
 hold on
-contourslice(x1d,y1d,z1d,ugrid,xp,yp,zp,10)
-contourslice(x1d,y1d,z1d,vgrid,xp,yp,zp,10)
+contourslice(x1d,y1d,z1d,ugrid,xp,yp,zp,Nu)
+contourslice(x1d,y1d,z1d,vgrid,xp,yp,zp,Nv)
+view(3)
+
+%% determine grid points
+tol = 0.002;
+[xp_,yp_,zp_] = paramf(1024,R);
+xp_ = xp_(:); yp_ = yp_(:); zp_ = zp_(:);
+Emesh = interp3_matrix(x1d,y1d,z1d,xp_,yp_,zp_,p,band);
+uplt = Emesh*u;
+vplt = Emesh*v;
+
+M = zeros(Nu*Nv,5);
+% Iu = sparse(size(uplt),Nu);
+% Iv = sparse(size(vplt),Nv);
+for i = 1:Nu
+    Iu = abs(uplt-(i)/(Nu+1))<tol;
+    for j = 1:Nv
+        Iv = abs(vplt-(j)/(Nv+1))<tol;
+        I = Iu&Iv;
+        if sum(I) ~= 0
+            M((i-1)*Nv+j,:) = [mean(xp_(I)),mean(yp_(I)),mean(zp_(I)),mean(uplt(I)),mean(vplt(I))];
+        else
+            M((i-1)*Nv+j,:) = [0,0,0,(i)/(Nu+1),(j)/(Nv+1)];
+        end
+    end
+end
+
+% plot3(M(:,1),M(:,2),M(:,3),'*');
+
+%% Plot image
+img = imread('m345-jkv.jpg');
+imgr = reshape(img,[256*256,3]);
+
+figure
+scatter3(M(:,1),M(:,2),M(:,3),10,imgr/255)
