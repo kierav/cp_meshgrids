@@ -10,7 +10,7 @@
 dx = 0.2/2^1;  % grid spacing
 R=1; %Radius of the circle
 
-cpf = @cpHemisphereBCs;
+cpf = @cpHemisphereBCs;  
 paramf = @paramHemisphere;
 loadData = 1;
 
@@ -28,8 +28,8 @@ nz=length(z1d);
 %[cpx,cpy,cpz, dist, bdy] = cpHemisphere(x3d,y3d,z3d R);
 
 % Using "cpbar" [Macdonald, Brandman, Ruuth 2011]:
-[cpx,cpy,cpz, dist, bdy, bdyBCs] = cpf(x3d,y3d,z3d, R);
-[cpxb,cpyb,cpzb,dist,tilde,tilde] = cpbar_3dBCs(x3d,y3d,z3d,cpf,R);
+% [cpx,cpy,cpz, dist, bdy, bdyBCs] = cpf(x3d,y3d,z3d, R);
+[cpxb,cpyb,cpzb,dist,bdy,bdyBCs] = cpbar_3dBCs(x3d,y3d,z3d,cpf,R);
 
 dim = 3;
 p = 3;  % degree interp
@@ -45,9 +45,9 @@ outband = find(abs(dist) > bw*dx);
 xg = x3d(band);
 yg = y3d(band);
 zg = z3d(band);
-cpxg = cpx(band);
-cpyg = cpy(band);
-cpzg = cpz(band);
+% cpxg = cpx(band);
+% cpyg = cpy(band);
+% cpzg = cpz(band);
 bdyg = bdy(band);
 cpxgb = cpxb(band);
 cpygb = cpyb(band);
@@ -65,9 +65,7 @@ bdy4 = bdy4(band);
 %% discrete operators
 disp('building laplacian and interp matrices');
 L = laplacian_3d_matrix(x1d,y1d,z1d, order, band,band);
-Eu = interp3_matrix(x1d,y1d,z1d, cpxg, cpyg, cpzg, p, band);
-Eub = interp3_matrix(x1d,y1d,z1d,cpxgb,cpygb,cpzgb, p, band);
-Eu = Eub;
+Eu = interp3_matrix(x1d,y1d,z1d,cpxgb,cpygb,cpzgb, p, band);
 Ev = Eu;
 I = speye(size(Eu));
 
@@ -114,7 +112,7 @@ v(bdy2) = 0;
 v(bdy4) = 1;
 
 %% time-stepping
-Tf = 10;
+Tf = 3;
 dt = 1/6 * dx^2;
 numtimesteps = ceil(Tf/dt);
 % adjust for integer number of steps
@@ -128,7 +126,6 @@ title('initial u')
 xlabel('x'); ylabel('y'); zlabel('z');
 axis equal
 view(-10, 60)
-%axis off;
 shading interp
 camlight left
 colorbar
@@ -178,11 +175,15 @@ end
 %% plot meshgrid
 Nu = 256;
 Nv = 256;
-Egrid = interp3_matrix(x1d,y1d,z1d,xg,yg,zg,p);
-ugrid = Egrid\u;
-ugrid = reshape(ugrid,size(x3d));
-vgrid = Egrid\v;
-vgrid = reshape(vgrid,size(x3d));
+% Egrid = interp3_matrix(x1d,y1d,z1d,xg,yg,zg,p);
+% ugrid = Egrid\u;
+% ugrid = reshape(ugrid,size(x3d));
+% vgrid = Egrid\v;
+% vgrid = reshape(vgrid,size(x3d));
+ugrid = -2*ones(size(x3d));
+ugrid(band) = u;
+vgrid = -2*ones(size(x3d));
+vgrid(band) = v;
 
 figure
 hold on
@@ -220,5 +221,18 @@ end
 img = imread('m345-jkv.jpg');
 imgr = reshape(img,[256*256,3]);
 
+% figure
+% scatter3(M(:,1),M(:,2),M(:,3),10,imgr/255)
+
+% convert to grayscale
+gr = rgb2gray(img);
+% interpolate
+uu = linspace(0,1,256);
+vv = uu;
+[UU,VV] = meshgrid(uu,vv);
+wp = interp2(UU,VV,double(gr),uplt,vplt);
+
 figure
-scatter3(M(:,1),M(:,2),M(:,3),10,imgr/255)
+surf(xp_,yp_,zp_,reshape(wp,size(xp_)));
+colormap gray
+axis equal; shading interp; colorbar;
