@@ -194,8 +194,8 @@ view(3)
 %% determine grid points
 tol = 0.002;
 [xp_,yp_,zp_] = paramf(1024,R);
-xp_ = xp_(:); yp_ = yp_(:); zp_ = zp_(:);
-Emesh = interp3_matrix(x1d,y1d,z1d,xp_,yp_,zp_,p,band);
+xp_1d = xp_(:); yp_1d = yp_(:); zp_1d = zp_(:);
+Emesh = interp3_matrix(x1d,y1d,z1d,xp_1d,yp_1d,zp_1d,p,band);
 uplt = Emesh*u;
 vplt = Emesh*v;
 
@@ -208,7 +208,7 @@ for i = 1:Nu
         Iv = abs(vplt-(j)/(Nv+1))<tol;
         I = Iu&Iv;
         if sum(I) ~= 0
-            M((i-1)*Nv+j,:) = [mean(xp_(I)),mean(yp_(I)),mean(zp_(I)),mean(uplt(I)),mean(vplt(I))];
+            M((i-1)*Nv+j,:) = [mean(xp_1d(I)),mean(yp_1d(I)),mean(zp_1d(I)),mean(uplt(I)),mean(vplt(I))];
         else
             M((i-1)*Nv+j,:) = [0,0,0,(i)/(Nu+1),(j)/(Nv+1)];
         end
